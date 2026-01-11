@@ -25,12 +25,12 @@ RUN curl -L https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-
     -o /opt/qemu/ubuntu.img
 
 # Write meta-data
-RUN echo "instance-id: ubuntu-vm\nlocal-hostname: ubuntu-vm" > /cloud-init/meta-data
+RUN echo "instance-id: ubuntu-vm\nlocal-hostname: samanyu-IN" > /cloud-init/meta-data
 
 # Write user-data
 RUN printf "#cloud-config\n\
 preserve_hostname: false\n\
-hostname: ubuntu-vm\n\
+hostname: samanyu-IN\n\
 users:\n\
   - name: root\n\
     gecos: root\n\
