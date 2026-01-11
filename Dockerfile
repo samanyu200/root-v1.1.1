@@ -27,7 +27,7 @@ RUN curl -L https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-
 # Write meta-data
 RUN echo "instance-id: ubuntu-vm\nlocal-hostname: ubuntu-vm" > /cloud-init/meta-data
 
-# Write user-data with working root login and password 'root'
+# Write user-data
 RUN printf "#cloud-config\n\
 preserve_hostname: false\n\
 hostname: ubuntu-vm\n\
@@ -58,7 +58,7 @@ RUN curl -L https://github.com/novnc/noVNC/archive/refs/tags/v1.3.0.zip -o /tmp/
     mv /tmp/noVNC-1.3.0/* /novnc && \
     rm -rf /tmp/novnc.zip /tmp/noVNC-1.3.0
 
-# Start script with auto-detect
+# Start script with KVM auto-detection
 RUN cat <<'EOF' > /start.sh
 #!/bin/bash
 set -e
@@ -67,26 +67,31 @@ DISK="/data/vm.raw"
 IMG="/opt/qemu/ubuntu.img"
 SEED="/opt/qemu/seed.iso"
 
-# Detect host CPU cores and RAM
 HOST_CORES=$(nproc)
 HOST_RAM_MB=$(grep MemTotal /proc/meminfo | awk '{print int($2/1024)}')
-# Use 90% of host RAM (safety margin)
 VM_RAM_MB=$((HOST_RAM_MB * 90 / 100))
 
-echo "Detected $HOST_CORES CPU cores and $HOST_RAM_MB MB RAM on host."
-echo "Allocating $HOST_CORES cores and $VM_RAM_MB MB RAM to VM."
+echo "Detected $HOST_CORES CPU cores and $HOST_RAM_MB MB RAM."
 
-# Create disk if it doesn't exist
 if [ ! -f "$DISK" ]; then
-    echo "Creating VM disk..."
     qemu-img convert -f qcow2 -O raw "$IMG" "$DISK"
     qemu-img resize "$DISK" 50G
 fi
 
-# Start VM
+# ---- KVM DETECTION (NO FEATURE CHANGE) ----
+KVM_ARGS=""
+CPU_ARGS="-cpu qemu64"
+ACCEL_NOTE="TCG (No KVM)"
+
+if [ -e /dev/kvm ] && [ -r /dev/kvm ] && [ -w /dev/kvm ]; then
+    KVM_ARGS="-enable-kvm"
+    CPU_ARGS="-cpu host"
+    ACCEL_NOTE="KVM Enabled"
+fi
+
 qemu-system-x86_64 \
-    -enable-kvm \
-    -cpu host \
+    $KVM_ARGS \
+    $CPU_ARGS \
     -smp "$HOST_CORES" \
     -m "$VM_RAM_MB" \
     -drive file="$DISK",format=raw,if=virtio \
@@ -97,20 +102,18 @@ qemu-system-x86_64 \
     -display vnc=:0 \
     -daemonize
 
-# Start noVNC
 websockify --web=/novnc 6080 localhost:5900 &
 
 echo "================================================"
 echo " 🖥️  VNC: http://localhost:6080/vnc.html"
 echo " 🔐 SSH: ssh root@localhost -p 2222"
 echo " 🧾 Login: root / root"
+echo " ⚙️  Mode: $ACCEL_NOTE"
 echo " 🚀 Made by Samanyu200"
 echo "================================================"
 
-# Wait for SSH port to be ready
 for i in {1..30}; do
-  nc -z localhost 2222 && echo "✅ VM is ready!" && break
-  echo "⏳ Waiting for SSH..."
+  nc -z localhost 2222 && echo "✅ VM Ready" && break
   sleep 2
 done
 
