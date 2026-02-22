@@ -30,7 +30,7 @@ RUN echo "instance-id: ubuntu-vm\nlocal-hostname: samanyu-IN" > /cloud-init/meta
 # Write user-data
 RUN printf "#cloud-config\n\
 preserve_hostname: false\n\
-hostname: samanyu-IN\n\
+hostname: samanyu\n\
 users:\n\
   - name: root\n\
     gecos: root\n\
