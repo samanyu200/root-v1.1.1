@@ -53,4 +53,5 @@ Now go to:
 cpp
 Copy
 Edit
+sudo /usr/lib/cockpit/cockpit-ws --no-tls
 https://<your-server-ip>:9090
