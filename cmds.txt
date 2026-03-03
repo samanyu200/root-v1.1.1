@@ -15,3 +15,16 @@ docker run --privileged -p 6080:6080 -p 2221:2222 -v $PWD/vmdata:/data ubuntu-vm
 docker run --privileged -it  debian:bookworm bash
 
 
+Goal,LXD command,Incus command
+List running containers,lxc list,incus list
+Launch Ubuntu 24.04,lxc launch ubuntu:24.04 name,incus launch images:ubuntu/24.04 name
+Enter shell,lxc exec name -- bash,incus exec name -- bash
+Run command without entering,lxc exec name -- apt update,incus exec name -- apt update
+Stop / Start,lxc stop/start name,incus stop/start name
+Console (like KVM),lxc console name,incus console name
+Add more RAM / CPU,"lxc config set name limits.cpu 4
+lxc config set name limits.memory 8GB",same syntax
+Add disk,lxc config device add name data disk source=/host/path path=/mnt/data,same
+Snapshot,lxc snapshot name snap1,incus snapshot name snap1
+Networking (public IP),usually use host port forwarding or macvlan/bridged,same
+
