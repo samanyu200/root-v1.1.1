@@ -1,0 +1,88 @@
+Full command sequence to install Proxmox on Debian 12
+1️⃣ Update Debian
+apt update
+apt upgrade -y
+2️⃣ Install required utilities
+
+These were needed because your system was missing them (like gpg earlier).
+
+apt install -y curl wget gnupg2 lsb-release ca-certificates
+3️⃣ Add Proxmox repository
+
+Create the repo file:
+
+echo "deb http://download.proxmox.com/debian/pve bookworm pve-no-subscription" \
+| tee /etc/apt/sources.list.d/pve-install-repo.list
+4️⃣ Add Proxmox GPG key
+wget https://enterprise.proxmox.com/debian/proxmox-release-bookworm.gpg \
+-O /usr/share/keyrings/proxmox-release-bookworm.gpg
+
+or
+
+curl -fsSL https://enterprise.proxmox.com/debian/proxmox-release-bookworm.gpg \
+| gpg --dearmor -o /usr/share/keyrings/proxmox-release-bookworm.gpg
+5️⃣ Update repositories
+apt update
+6️⃣ Install Proxmox VE
+apt install -y proxmox-ve postfix open-iscsi
+
+During install:
+
+Choose:
+
+Local only
+
+for postfix.
+
+7️⃣ Reboot
+reboot
+8️⃣ Fix hostname / hosts (the issue you had)
+
+Edit:
+
+nano /etc/hosts
+
+Example:
+
+127.0.0.1 localhost
+10.0.2.15 proxmox
+
+::1 localhost ip6-localhost ip6-loopback
+9️⃣ Regenerate certificates
+pvecm updatecerts --force
+🔟 Restart services
+systemctl restart pveproxy
+systemctl restart pvedaemon
+systemctl restart pvestatd
+1️⃣1️⃣ Check Proxmox running
+ss -tulpn | grep 8006
+
+You should see:
+
+pveproxy listening on 8006
+1️⃣2️⃣ Access panel
+https://SERVER-IP:8006
+
+or via Tailscale
+
+https://TAILSCALE-IP:8006
+Extra things you installed earlier
+
+You also installed:
+
+cloudflared
+
+Tailscale
+
+Those are just remote access tunnels, not part of Proxmox itself.
+
+Important VPS warning
+
+Since you're running this on a VPS, check virtualization support:
+
+egrep -c '(vmx|svm)' /proc/cpuinfo
+
+Result meanings:
+
+0 = NO KVM support (VMs won't work)
+1+ = KVM supported
