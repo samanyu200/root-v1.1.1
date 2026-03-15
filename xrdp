@@ -1,0 +1,13 @@
+sudo apt update && sudo apt upgrade -y
+
+sudo apt install xfce4 xfce4-goodies xrdp -y
+
+echo "startxfce4" > ~/.xsession
+sudo chown $(whoami):$(whoami) ~/.xsession
+
+
+sudo systemctl enable xrdp
+sudo systemctl restart xrdp
+
+sudo /usr/sbin/xrdp
+sudo /usr/sbin/xrdp-sesman
